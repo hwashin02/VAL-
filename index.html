@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VALORANT TEAM TOOL</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-orb orb-1"></div><div class="bg-orb orb-2"></div><div class="noise"></div>
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">VALORANT PROJECT</p>
+      <h1>VALORANT TEAM TOOL</h1>
+      <p class="subtext">Map Random &amp; Team Setup</p>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="map">맵 고르기</button>
+      <button class="tab-btn" data-tab="team">⚔️ 팀짜기</button>
+    </nav>
+
+    <section id="tab-map" class="tab-content active">
+      <div class="content-grid">
+        <div class="draw-panel card">
+          <div id="cardDeck" class="card-deck" aria-hidden="true">
+            <div class="deck-card"></div><div class="deck-card"></div><div class="deck-card"></div><div class="deck-card deck-top">V</div>
+          </div>
+          <div id="drawStage" class="draw-stage">
+            <div class="draw-hint">아래 <b>맵 뽑기</b>를 눌러<br>맵을 뽑아보세요</div>
+          </div>
+        </div>
+
+        <aside class="info-panel card">
+          <div class="result-box"><span class="label">선택 결과</span><strong id="resultText">?</strong></div>
+          <div class="mode-box">
+            <span class="label mode-top">룰렛 모드</span>
+            <div class="toggle-row">
+              <div class="toggle-text-wrap"><span class="toggle-title">제외 모드</span><span class="toggle-desc">이미 나온 맵은 다음부터 제외하고 돌리기</span></div>
+              <label class="toggle-switch"><input id="excludeMode" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="mode-status"><span id="modeStatusText">현재: 기본 모드</span><span id="remainingText">남은 맵: 13개</span></div>
+            <div class="button-group"><button id="spinBtn" class="primary-btn">🎲 맵 뽑기</button><button id="resetBtn" class="secondary-btn">초기화</button></div>
+            <button id="excludeMapsBtn" class="secondary-btn exclude-trigger">⚙️ 맵 제외 설정</button>
+          </div>
+          <div class="history-box"><div class="history-header"><span>최근 결과</span></div><div id="historyList" class="history-list"></div></div>
+          <div class="used-box"><span class="label">이미 나온 맵</span><div id="usedList" class="history-list"></div></div>
+          <div class="map-list-box"><span class="map-list-title">포함 맵</span><p class="map-list-names">Ascent, Bind, Breeze, Haven, Icebox, Lotus, Pearl, Fracture, Split, Sunset, Abyss, Corrode</p></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-team" class="tab-content">
+      <div class="team-builder">
+        <div class="team-controls card">
+          <div class="controls-top">
+            <input id="memberSearch" class="search-input" type="search" placeholder="이름 검색" />
+            <div class="tier-filters">
+              <button class="filter-btn active" data-filter="all">전체</button><button class="filter-btn" data-filter="불멸">불멸</button><button class="filter-btn" data-filter="초월자">초월자</button><button class="filter-btn" data-filter="다이아">다이아</button><button class="filter-btn" data-filter="플래티넘">플래티넘</button><button class="filter-btn" data-filter="골드">골드</button><button class="filter-btn" data-filter="실버이하">실버 이하</button>
+            </div>
+            <div class="add-member-row">
+              <input id="addName" class="search-input" maxlength="20" placeholder="참가자 이름" />
+              <select id="addTier" aria-label="티어"></select>
+              <button id="addMemberBtn" class="primary-btn sm-btn">＋ 참가자 추가</button>
+            </div>
+            <div class="add-member-roles" aria-label="선호 역할">
+              <label class="add-role"><input type="checkbox" name="addRole" value="타격대">타격대</label><label class="add-role"><input type="checkbox" name="addRole" value="감시자">감시자</label><label class="add-role"><input type="checkbox" name="addRole" value="척후대">척후대</label><label class="add-role"><input type="checkbox" name="addRole" value="전략가">전략가</label><label class="add-role"><input type="checkbox" name="addRole" value="플렉스">플렉스</label>
+            </div>
+          </div>
+          <div class="controls-bottom">
+            <div class="select-actions"><button id="reloadMembersBtn" class="secondary-btn sm-btn">↻ 새로고침</button><button id="deselectAllBtn" class="secondary-btn sm-btn">전체 해제</button><button id="debugPick10Btn" class="secondary-btn sm-btn">🎲 랜덤 10명</button></div>
+            <span id="selectedCount" class="selected-badge">0명 선택됨</span>
+          </div>
+        </div>
+
+        <div id="memberGrid" class="member-grid"></div>
+        <div class="team-action-bar"><button id="balanceTeamBtn" class="primary-btn">⚖️ 밸런스 팀짜기</button><button id="randomTeamBtn" class="secondary-btn">🎲 랜덤 팀짜기</button><button id="manualTeamBtn" class="secondary-btn">✋ 직접 팀짜기</button></div>
+
+        <section id="manualSection" class="manual-section hidden">
+          <div class="manual-teams-preview">
+            <div class="manual-preview-box card team-a-border"><span class="manual-preview-label team-a-color">팀 A <small id="manualACount">0명</small></span><div id="manualAChips" class="manual-chips"></div></div>
+            <div class="manual-preview-box card team-b-border"><span class="manual-preview-label team-b-color">팀 B <small id="manualBCount">0명</small></span><div id="manualBChips" class="manual-chips"></div></div>
+          </div>
+          <div id="manualMemberList" class="manual-member-list card"></div>
+          <button id="confirmManualBtn" class="primary-btn confirm-manual-btn">확정하기</button>
+        </section>
+
+        <section id="teamResult" class="team-result hidden">
+          <div class="team-result-grid">
+            <div class="team-card card"><div class="team-header"><span class="team-label team-a-color">팀 A</span><span id="teamAMeta" class="team-meta"></span></div><div id="teamAList" class="team-member-list"></div></div>
+            <div class="team-card card"><div class="team-header"><span class="team-label team-b-color">팀 B</span><span id="teamBMeta" class="team-meta"></span></div><div id="teamBList" class="team-member-list"></div></div>
+          </div>
+          <div class="result-actions"><button id="saveResultBtn" class="secondary-btn">💾 보드에 저장</button><button id="copyResultBtn" class="primary-btn copy-result-btn">📋 결과 복사하기</button></div>
+        </section>
+        <div id="savedBoard" class="saved-board hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="excludeModal" class="modal-overlay" aria-hidden="true"><div class="modal-box modal-box-narrow"><div class="modal-head"><span class="modal-title">⚙️ 맵 제외 설정</span><button id="excludeModalClose" class="modal-close">✕</button></div><p class="exclude-desc">제외할 맵을 누르세요. 제외된 맵은 뽑기에서 빠집니다.</p><div id="excludeMapGrid" class="exclude-grid"></div><div class="exclude-foot"><button id="excludeResetBtn" class="secondary-btn">전체 포함</button><button id="excludeDoneBtn" class="primary-btn">완료</button></div></div></div>
+  <div id="mapReveal" class="map-reveal" aria-hidden="true"><div class="map-reveal-card"><span class="map-reveal-label">선택된 맵</span><div class="map-reveal-img-wrap"><img id="mapRevealImg" class="map-reveal-img" alt=""></div><div id="mapRevealName" class="map-reveal-name"></div><button id="mapRevealClose" class="primary-btn map-reveal-btn">확인</button></div></div>
+  <div id="balanceModal" class="modal-overlay" aria-hidden="true"><div class="modal-box"><div class="modal-head"><span class="modal-title">⚖️ 밸런스 후보 3가지</span><button id="balanceModalClose" class="modal-close">✕</button></div><div id="balanceModalList" class="modal-options"></div><div class="modal-foot"><button id="rerollBalanceBtn" class="primary-btn reroll-btn"><span class="reroll-dice">🎲</span> 다시 짜기</button><button id="saveMinDiffBtn" class="secondary-btn">최저 점수차 저장</button><button id="saveRandomBtn" class="secondary-btn">랜덤 저장</button></div></div></div>
+  <script src="script.js"></script>
+</body></html>
