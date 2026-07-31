@@ -1,3 +1,4 @@
-VALORANT TEAM TOOL
+VALORANT TEAM TOOL - FIREBASE SHARED VERSION
 
-index.html을 실행하세요. 원본 사이트/Firebase/GitHub와 연동되지 않습니다. 참가자 정보는 이름·티어·선호 역할만 브라우저 localStorage에 저장됩니다. 학번과 라이엇 ID 입력/표시는 제거했습니다.
+참가자 명단은 Firebase Cloud Firestore에 저장되며 모든 접속자에게 실시간 공유됩니다.
+처음 배포하기 전에 FIREBASE_SETUP.txt를 읽고 firebase-config.js와 Firestore Rules를 설정하세요.

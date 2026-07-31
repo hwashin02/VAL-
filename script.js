@@ -1,3 +1,35 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const firebaseConfigured = Object.values(firebaseConfig).every(
+  value => typeof value === "string" && value.trim() && !value.includes("여기에")
+);
+
+let db = null;
+let rosterCollection = null;
+let rosterUnsubscribe = null;
+let firebaseReadyPromise = null;
+
+function initializeSharedRoster() {
+  if (firebaseReadyPromise) return firebaseReadyPromise;
+  firebaseReadyPromise = (async () => {
+    if (!firebaseConfigured) {
+      throw new Error("firebase-config.js에 Firebase 설정값을 입력해 주세요.");
+    }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    await signInAnonymously(auth);
+    db = getFirestore(app);
+    rosterCollection = collection(db, "roster");
+  })();
+  return firebaseReadyPromise;
+}
+
 const maps = [
   "Ascent",
   "Bind",
@@ -1014,59 +1046,102 @@ function renderSavedBoard() {
   });
 }
 
-// ===== 독립형 로컬 참가자 명단 =====
+// ===== Firebase Firestore 공유 참가자 명단 =====
 const reloadMembersBtn = document.getElementById("reloadMembersBtn");
 const addNameEl = document.getElementById("addName");
 const addTierEl = document.getElementById("addTier");
 const addMemberBtn = document.getElementById("addMemberBtn");
-const LOCAL_MEMBERS_KEY = "valorantTeamTool.members.v3";
 
 const TIER_OPTIONS = ["언랭","아이언1","아이언2","아이언3","브론즈1","브론즈2","브론즈3","실버1","실버2","실버3","골드1","골드2","골드3","플래티넘1","플래티넘2","플래티넘3","다이아1","다이아2","다이아3","초월자1","초월자2","초월자3","불멸1","불멸2","불멸3","레디언트"];
 addTierEl.innerHTML = TIER_OPTIONS.map(t => `<option value="${t}">${t}</option>`).join("");
 
-function saveMembers() {
-  localStorage.setItem(LOCAL_MEMBERS_KEY, JSON.stringify(members));
+function normalizeRemoteMember(snapshot) {
+  const data = snapshot.data() || {};
+  return {
+    docId: snapshot.id,
+    name: String(data.name || "").trim(),
+    tier: normalizeTier(data.tier || "언랭"),
+    positions: Array.isArray(data.positions) ? data.positions.map(String) : [],
+    createdAt: data.createdAt || null
+  };
 }
-function loadMembers() {
+
+function showRosterError(error) {
+  console.error(error);
+  memberGridEl.innerHTML = `
+    <div class="no-results">
+      참가자 명단을 불러오지 못했습니다.<br>
+      <small>${String(error?.message || error)}</small>
+    </div>`;
+}
+
+async function loadMembers() {
   try {
-    const saved = JSON.parse(localStorage.getItem(LOCAL_MEMBERS_KEY) || "[]");
-    members = Array.isArray(saved) ? saved.filter(m => m && m.name).map(m => ({name:String(m.name), tier:normalizeTier(m.tier || "언랭"), positions:Array.isArray(m.positions) ? m.positions : []})) : [];
-  } catch (_) { members = []; }
-  members.sort((a,b) => tierScore(b.tier)-tierScore(a.tier));
-  selectedIndices.clear();
-  renderMemberGrid();
-  updateSelectedCount();
+    await initializeSharedRoster();
+    if (rosterUnsubscribe) rosterUnsubscribe();
+    rosterUnsubscribe = onSnapshot(rosterCollection, snapshot => {
+      members = snapshot.docs
+        .map(normalizeRemoteMember)
+        .filter(member => member.name)
+        .sort((a, b) => tierScore(b.tier) - tierScore(a.tier) || a.name.localeCompare(b.name, "ko"));
+      selectedIndices.clear();
+      renderMemberGrid();
+      updateSelectedCount();
+    }, showRosterError);
+  } catch (error) {
+    showRosterError(error);
+  }
 }
-function addMember() {
+
+async function addMember() {
   const name = addNameEl.value.trim();
   if (!name) { addNameEl.focus(); return; }
-  const positions = [...document.querySelectorAll('input[name="addRole"]:checked')].map(el => el.value);
-  members.push({ name, tier: normalizeTier(addTierEl.value || "언랭"), positions });
-  members.sort((a,b) => tierScore(b.tier)-tierScore(a.tier));
-  saveMembers();
-  addNameEl.value = "";
-  document.querySelectorAll('input[name="addRole"]:checked').forEach(el => el.checked=false);
-  selectedIndices.clear();
-  renderMemberGrid();
-  updateSelectedCount();
-  addNameEl.focus();
+
+  addMemberBtn.disabled = true;
+  try {
+    await initializeSharedRoster();
+    const positions = [...document.querySelectorAll('input[name="addRole"]:checked')].map(el => el.value);
+    await addDoc(rosterCollection, {
+      name,
+      tier: normalizeTier(addTierEl.value || "언랭"),
+      positions,
+      createdAt: serverTimestamp()
+    });
+    addNameEl.value = "";
+    document.querySelectorAll('input[name="addRole"]:checked').forEach(el => el.checked = false);
+    addNameEl.focus();
+  } catch (error) {
+    alert(`참가자 추가 실패: ${error.message || error}`);
+  } finally {
+    addMemberBtn.disabled = false;
+  }
 }
+
 addMemberBtn.addEventListener("click", addMember);
-addNameEl.addEventListener("keydown", e => { if (e.key === "Enter") addMember(); });
+addNameEl.addEventListener("keydown", event => {
+  if (event.key === "Enter") addMember();
+});
 reloadMembersBtn.addEventListener("click", loadMembers);
 
-// 카드의 작은 × 버튼으로 로컬 참가자 삭제
-memberGridEl.addEventListener("click", e => {
-  const del = e.target.closest(".member-delete");
-  if (!del) return;
-  e.stopPropagation();
-  const idx = Number(del.dataset.index);
-  if (!Number.isInteger(idx) || !members[idx]) return;
-  members.splice(idx,1);
-  saveMembers();
-  selectedIndices.clear();
-  renderMemberGrid();
-  updateSelectedCount();
+// 카드의 작은 × 버튼으로 Firestore 참가자 삭제
+memberGridEl.addEventListener("click", async event => {
+  const deleteButton = event.target.closest(".member-delete");
+  if (!deleteButton) return;
+  event.stopPropagation();
+
+  const memberIndex = Number(deleteButton.dataset.index);
+  const member = members[memberIndex];
+  if (!Number.isInteger(memberIndex) || !member?.docId) return;
+  if (!confirm(`${member.name} 참가자를 삭제할까요?`)) return;
+
+  deleteButton.disabled = true;
+  try {
+    await initializeSharedRoster();
+    await deleteDoc(doc(db, "roster", member.docId));
+  } catch (error) {
+    deleteButton.disabled = false;
+    alert(`참가자 삭제 실패: ${error.message || error}`);
+  }
 });
 
 // 원본 카드 렌더링 뒤 삭제 버튼만 덧붙임
@@ -1074,9 +1149,13 @@ const _renderMemberGrid = renderMemberGrid;
 renderMemberGrid = function() {
   _renderMemberGrid();
   memberGridEl.querySelectorAll(".member-card").forEach(card => {
-    const b = document.createElement("button");
-    b.type="button"; b.className="member-delete"; b.dataset.index=card.dataset.index; b.title="참가자 삭제"; b.textContent="×";
-    card.appendChild(b);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "member-delete";
+    button.dataset.index = card.dataset.index;
+    button.title = "참가자 삭제";
+    button.textContent = "×";
+    card.appendChild(button);
   });
 };
 

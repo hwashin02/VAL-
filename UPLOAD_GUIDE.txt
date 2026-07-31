@@ -1,0 +1,11 @@
+GitHub Pages 업로드용 완성본입니다.
+
+이 폴더 안의 내용물을 저장소 최상위(root)에 올리세요.
+index.html, style.css, script.js와 valorant_map_png, valorant_tier_png 폴더가 같은 위치에 있어야 합니다.
+
+GitHub Desktop 사용 권장:
+1. 저장소를 GitHub Desktop으로 Clone
+2. 이 폴더 안의 모든 파일/폴더를 Clone된 저장소 폴더에 복사
+3. GitHub Desktop에서 Commit to main
+4. Push origin
+5. GitHub 저장소 Settings > Pages > Deploy from a branch > main / (root) > Save

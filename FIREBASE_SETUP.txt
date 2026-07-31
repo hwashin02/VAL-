@@ -1,0 +1,23 @@
+VALORANT TEAM TOOL - Firebase 실시간 공유 설정
+================================================
+
+이 버전은 참가자 명단을 Cloud Firestore의 "roster" 컬렉션에 저장합니다.
+한 사람이 추가하거나 삭제하면 같은 사이트를 연 모든 사람에게 실시간 반영됩니다.
+
+1. https://console.firebase.google.com 에서 프로젝트를 만듭니다.
+2. 프로젝트 개요에서 웹 앱(</>)을 추가합니다.
+3. 표시되는 firebaseConfig 값을 firebase-config.js에 붙여 넣습니다.
+4. Firebase Console → Authentication → Sign-in method에서
+   "Anonymous(익명)" 로그인을 활성화합니다.
+5. Firebase Console → Firestore Database → 데이터베이스 만들기를 누릅니다.
+   Standard edition / 원하는 리전을 선택합니다.
+6. Firestore Database → Rules에서 이 ZIP의 firestore.rules 내용을 붙여 넣고
+   "Publish"를 누릅니다.
+7. firebase-config.js를 수정한 뒤 GitHub 저장소에 모든 파일을 다시 올리고 Commit합니다.
+8. GitHub Pages 배포가 끝난 뒤 기존 사이트 주소를 새로고침합니다.
+
+주의
+- firebaseConfig는 웹 앱에서 공개되어도 되는 연결 설정값입니다.
+- 보안은 firebaseConfig를 숨기는 것이 아니라 Firestore Rules로 제어합니다.
+- 이 규칙에서는 사이트 방문자가 익명 로그인 후 참가자를 추가/삭제할 수 있습니다.
+- 관리자가 아닌 사람의 삭제를 막으려면 별도의 관리자 로그인 기능이 필요합니다.
